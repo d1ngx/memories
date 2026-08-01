@@ -1,0 +1,16 @@
+{
+	"id":"memories",
+	"name":"{{LNG['memories.meta.name']}}",
+	"title":"{{LNG['memories.meta.title']}}",
+	"version":"1.7.0",
+	"category":"media,file",
+	"source":{"className":"font-icon ri-gallery-fill bg-blue-6"},
+	"description":"{{LNG['memories.meta.desc']}}",
+	"auther":{"copyright":"KodBox port contributors","homePage":"https://memories.gallery"},
+	"configItem":{
+		"pluginAuth":{"type":"userSelect","value":{"all":1},"display":"{{LNG['admin.plugin.auth']}}","desc":"{{LNG['admin.plugin.authDesc']}}","require":1},
+		"menuAdd":{"type":"switch","value":1,"display":"{{LNG['admin.plugin.menuAdd']}}","desc":"{{LNG['admin.plugin.menuAddDesc']}}"},
+		"scanBatch":{"type":"number","value":"100","display":"{{LNG['memories.config.scanBatch']}}","desc":"{{LNG['memories.config.scanBatchDesc']}}"},
+		"fileExt":{"type":"tags","value":"jpg,jpeg,png,gif,webp,avif,heic,heif,bmp,mp4,mov,m4v,webm,mkv,avi","display":"{{LNG['admin.plugin.fileExt']}}","desc":"{{LNG['admin.plugin.fileExtDesc']}}"}
+	}
+}

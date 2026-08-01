@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>Memories</title>
+	<link rel="stylesheet" href="./plugins/memories/static/style.css?v=1.7.0">
+</head>
+<body>
+	<div id="app" class="app-shell">
+		<aside class="library-nav">
+			<div class="brand"><span class="brand-icon">▣</span><strong>Memories</strong></div>
+			<nav class="nav-section primary-nav">
+				<button class="nav-item active" data-view="timeline" data-title="时间线" data-subtitle="按拍摄日期浏览照片和视频"><span>▧</span>时间线</button>
+				<button class="nav-item" data-action="search"><span>⌕</span>搜索</button>
+				<button class="nav-item" data-action="folders"><span>▰</span>文件夹</button>
+				<button class="nav-item" data-view="favorites" data-title="收藏" data-subtitle="你收藏的照片和视频"><span>★</span>收藏</button>
+				<button class="nav-item" data-action="albums"><span>▣</span>相册</button>
+				<button class="nav-item" data-action="people"><span>▣</span>人物 <em id="people-count"></em></button>
+				<button class="nav-item" data-view="archive" data-title="归档" data-subtitle="已从时间线归档的项目"><span>▰</span>归档</button>
+				<button class="nav-item" data-view="thisday" data-title="当年今日" data-subtitle="往年今天拍摄的回忆"><span>▣</span>当年今日</button>
+				<button class="nav-item" data-view="places" data-title="地图" data-subtitle="包含地理位置的照片"><span>⌖</span>地图</button>
+				<button class="nav-item" data-action="tags"><span>◆</span>标签 <em id="tag-count"></em></button>
+			</nav>
+			<button class="nav-item settings" data-action="settings"><span>⚙</span>设置</button>
+		</aside>
+
+		<section class="content-shell">
+			<header class="content-header">
+				<div class="heading"><h1 id="page-title">时间线</h1><p id="subtitle">按拍摄日期浏览照片和视频</p></div>
+				<div class="actions">
+					<div class="search-box"><span>⌕</span><input id="search-input" type="search" placeholder="查找你的图片…" autocomplete="off"></div>
+					<select id="media-filter" aria-label="媒体类型"><option value="timeline">所有媒体</option><option value="photos">照片</option><option value="videos">视频</option></select>
+					<button id="scan">更新索引</button>
+				</div>
+			</header>
+			<main id="timeline"><div class="empty">正在加载…</div></main>
+			<div id="sentinel"></div>
+		</section>
+	</div>
+
+	<div id="viewer" class="viewer hidden"><button class="close">×</button><div class="stage"></div><div class="caption"></div></div>
+
+	<div id="settings" class="modal hidden">
+		<div class="settings-card">
+			<button class="modal-close" aria-label="关闭">×</button>
+			<h2>Memories 设置</h2>
+			<div class="settings-layout">
+				<nav class="settings-nav">
+					<button class="active" data-panel="general">常规</button>
+					<button data-panel="viewer">照片浏览器</button>
+					<button data-panel="folders">文件夹</button>
+					<button data-panel="albums">相册</button>
+					<button data-panel="thisday">On This Day</button>
+				</nav>
+				<div class="settings-content">
+					<section class="settings-panel active" data-panel="general">
+						<h3>常规</h3>
+						<label class="field"><span>时间线路径</span><input value="个人空间" disabled></label>
+						<label class="switch-row"><input id="pref-square" type="checkbox"><span class="switch"></span><span>方形网格模式</span></label>
+						<label class="switch-row"><input id="pref-names" type="checkbox"><span class="switch"></span><span>在照片上显示文件名</span></label>
+						<label class="switch-row"><input id="pref-tags" type="checkbox"><span class="switch"></span><span>在照片上显示智能标签</span></label>
+					</section>
+					<section class="settings-panel" data-panel="viewer">
+						<h3>照片浏览器</h3>
+						<p>图片使用 PhotoSwipe，视频使用 DPlayer 打开。</p>
+						<label class="switch-row"><input id="pref-autoplay" type="checkbox"><span class="switch"></span><span>视频打开后自动播放</span></label>
+						<label class="field"><span>高清图像加载偏好</span><select id="pref-quality"><option value="balanced">缩放时加载高清图像</option><option value="always">总是加载高清图像</option><option value="thumb">优先缩略图</option></select></label>
+					</section>
+					<section class="settings-panel" data-panel="folders">
+						<h3>文件夹</h3><p>当前索引 KodBox 个人空间内所有支持的媒体文件。</p>
+						<div class="folder-row"><span>▰</span><div><b>个人空间</b><small>由 KodBox 权限系统保护</small></div></div>
+						<button class="settings-scan primary">立即更新索引</button>
+					</section>
+					<section class="settings-panel" data-panel="albums"><h3>相册</h3><p>可以创建、重命名和删除相册，并从媒体卡片将照片或视频加入相册。</p></section>
+					<section class="settings-panel" data-panel="thisday"><h3>On This Day</h3><p>“当年今日”会显示往年同月同日拍摄的媒体。</p></section>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="app-dialog" class="app-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="app-dialog-title">
+		<div class="app-dialog-card">
+			<button class="app-dialog-close" type="button" aria-label="关闭">×</button>
+			<div class="app-dialog-icon" aria-hidden="true">✦</div>
+			<h2 id="app-dialog-title"></h2>
+			<p id="app-dialog-message"></p>
+			<label class="app-dialog-field"><span>人物名称</span><input id="app-dialog-input" type="text" maxlength="60" autocomplete="off"></label>
+			<div class="app-dialog-choices hidden"></div>
+			<div class="app-dialog-actions"><button type="button" data-dialog-cancel>取消</button><button type="button" class="primary" data-dialog-confirm>确定</button></div>
+		</div>
+	</div>
+	<script src="./plugins/memories/static/page.js?v=1.7.0"></script>
+</body>
+</html>

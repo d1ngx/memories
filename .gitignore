@@ -1,0 +1,16 @@
+# Local development output
+/coverage/
+/.phpunit.cache/
+/.phpunit.result.cache
+/node_modules/
+/dist/
+/*.log
+/*.tmp
+.DS_Store
+Thumbs.db
+
+# Runtime media, thumbnails and indexes belong to KodBox data/database,
+# never to the plugin source directory.
+/data/
+/cache/
+/thumbs/
