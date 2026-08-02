@@ -5,4 +5,6 @@ return array(
 	'memories.meta.desc' => 'Browse photos and videos by capture date with local Recognize tags and people clusters.',
 	'memories.config.scanBatch' => 'Scan batch size',
 	'memories.config.scanBatchDesc' => 'Media files processed by each indexing request.',
+	'memories.config.debug' => 'Debug logging',
+	'memories.config.debugDesc' => 'Disabled by default. Enable detailed index, Recognize dispatch and scan diagnostics; critical errors are always logged.',
 );

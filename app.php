@@ -28,6 +28,7 @@ class memoriesPlugin extends PluginBase {
 	public function onSetConfig($config) {
 		$this->initTable();
 		$this->updateTask(1);
+		$config['debug'] = _get($config, 'debug', '0') == '1' ? 1 : 0;
 		return $config;
 	}
 
@@ -122,7 +123,7 @@ class memoriesPlugin extends PluginBase {
 		$this->recognizeTrace['sourceTotal'] = count($sources);
 		$this->recognizeTrace['processed'] = $processed;
 		$this->recognizeTrace['skipped'] = $skipped;
-		write_log('[memories.scan] '.json_encode_force($this->recognizeTrace), 'recognize', 'info');
+		$this->trace('scan '.json_encode_force($this->recognizeTrace));
 		return array(
 			'processed' => $processed,
 			'skipped' => $skipped,
@@ -467,6 +468,11 @@ class memoriesPlugin extends PluginBase {
 
 	private function log($message) {
 		write_log('[memories] '.$message, 'error');
+	}
+
+	private function trace($message) {
+		if (_get($this->getConfig(), 'debug', '0') != '1') return;
+		write_log('[memories] '.$message, 'memories', 'info');
 	}
 
 	private function signedUrl($method, $sourceID) {
