@@ -18,7 +18,7 @@ foreach ($files as $file) {
 $tables = array();
 $result = $db->query("SELECT name FROM sqlite_master WHERE type = 'table'");
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) $tables[] = $row['name'];
-foreach (array('plugin_memories_media', 'plugin_memories_album', 'plugin_memories_album_item', 'plugin_recognize_queue', 'plugin_recognize_tag') as $table) {
+foreach (array('plugin_memories_media', 'plugin_memories_album', 'plugin_memories_album_item', 'plugin_memories_metadata_state', 'plugin_recognize_queue', 'plugin_recognize_tag') as $table) {
 	assert(in_array($table, $tables, true));
 }
 echo "SQLite schemas passed\n";

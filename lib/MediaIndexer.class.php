@@ -7,6 +7,15 @@ class MemoriesMediaIndexer {
 		$this->plugin = $plugin;
 	}
 
+	public function capabilities() {
+		return array('exif' => function_exists('exif_read_data'), 'xmp' => true, 'quickTime' => defined('SDK_DIR') && is_file(SDK_DIR.'/getID3/getid3/getid3.php'));
+	}
+
+	public function fingerprint() {
+		$cap = $this->capabilities();
+		return 'geo-v3-exif'.intval($cap['exif']).'-xmp1-qt'.intval($cap['quickTime']);
+	}
+
 	public function metadata($source) {
 		$path = KodIO::make($source['sourceID']);
 		$local = $this->localFile($path);
@@ -26,6 +35,12 @@ class MemoriesMediaIndexer {
 				}
 			}
 		}
+		if ($local && is_file($local) && ($latitude === null || $longitude === null)) {
+			$xmp = $this->xmpGps($local); if ($xmp) { $latitude = $xmp[0]; $longitude = $xmp[1]; }
+		}
+		if ($local && is_file($local) && ($latitude === null || $longitude === null) && $this->isVideo($source['fileType'])) {
+			$videoGps = $this->getId3Gps($local); if ($videoGps) { $latitude = $videoGps[0]; $longitude = $videoGps[1]; }
+		}
 		return array('takenAt' => $takenAt ?: time(), 'width' => $width, 'height' => $height, 'latitude' => $latitude, 'longitude' => $longitude);
 	}
 
@@ -42,6 +57,48 @@ class MemoriesMediaIndexer {
 		return round($decimal, 8);
 	}
 
+	public function coordinate($value, $ref = '') {
+		if (is_numeric($value)) $decimal = floatval($value);
+		else {
+			$value = trim((string)$value); if ($value === '') return null;
+			if (preg_match('/^([+-]?\d+(?:\.\d+)?)[, ]+(\d+(?:\.\d+)?)(?:[, ]+(\d+(?:\.\d+)?))?\s*([NSEW])?$/i', $value, $m)) $decimal = abs(floatval($m[1])) + floatval($m[2]) / 60 + floatval(_get($m, 3, 0)) / 3600;
+			elseif (preg_match('/[+-]?\d+(?:\.\d+)?/', $value, $m)) $decimal = floatval($m[0]); else return null;
+			if (substr($value, 0, 1) === '-') $decimal = -abs($decimal);
+			if (!empty($m[4])) $ref = $m[4];
+		}
+		if (in_array(strtoupper((string)$ref), array('S', 'W'))) $decimal = -abs($decimal);
+		return round($decimal, 8);
+	}
+
+	private function xmpGps($file) {
+		$handle = @fopen($file, 'rb'); if (!$handle) return null;
+		$data = @fread($handle, 4 * 1024 * 1024); @fclose($handle); if (!$data) return null;
+		$lat = $this->xmpValue($data, 'GPSLatitude'); $lon = $this->xmpValue($data, 'GPSLongitude');
+		if ($lat === null || $lon === null) return null;
+		$lat = $this->coordinate($lat); $lon = $this->coordinate($lon);
+		return $this->validGps($lat, $lon) ? array($lat, $lon) : null;
+	}
+
+	private function xmpValue($data, $name) {
+		$quoted = preg_quote($name, '/');
+		if (preg_match('/(?:exif|exifEX|photoshop):'.$quoted.'\s*=\s*["\']([^"\']+)["\']/i', $data, $m)) return html_entity_decode($m[1], ENT_QUOTES, 'UTF-8');
+		if (preg_match('/<(?:exif|exifEX|photoshop):'.$quoted.'[^>]*>([^<]+)</i', $data, $m)) return html_entity_decode($m[1], ENT_QUOTES, 'UTF-8');
+		return null;
+	}
+
+	private function getId3Gps($file) {
+		try {
+			if (!class_exists('getID3')) { if (!defined('SDK_DIR') || !is_file(SDK_DIR.'/getID3/getid3/getid3.php')) return null; require_once SDK_DIR.'/getID3/getid3/getid3.php'; }
+			$info = (new getID3())->analyze($file, @filesize($file), basename($file));
+			$lat = _get($info, 'quicktime.comments.gps_latitude.0', _get($info, 'comments.gps_latitude.0'));
+			$lon = _get($info, 'quicktime.comments.gps_longitude.0', _get($info, 'comments.gps_longitude.0'));
+			$lat = $this->coordinate($lat); $lon = $this->coordinate($lon);
+			return $this->validGps($lat, $lon) ? array($lat, $lon) : null;
+		} catch (Throwable $e) { return null; }
+	}
+
+	private function validGps($lat, $lon) { return $lat !== null && $lon !== null && $lat >= -90 && $lat <= 90 && $lon >= -180 && $lon <= 180; }
+
 	private function fraction($value) {
 		if (is_numeric($value)) return floatval($value);
 		$bits = explode('/', (string)$value, 2);
@@ -51,6 +108,8 @@ class MemoriesMediaIndexer {
 	private function isImage($ext) {
 		return in_array(strtolower($ext), array('jpg','jpeg','png','gif','webp','avif','heic','heif','bmp'));
 	}
+
+	private function isVideo($ext) { return in_array(strtolower($ext), array('mp4','mov','m4v','webm','mkv','avi')); }
 
 	private function localFile($path) {
 		if (!is_file(PLUGIN_DIR.'fileThumb/app.php')) return false;

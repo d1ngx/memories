@@ -46,3 +46,14 @@ CREATE TABLE IF NOT EXISTS `plugin_memories_album_item` (
   KEY `user_album` (`userID`,`albumID`),
   KEY `source` (`sourceID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `plugin_memories_metadata_state` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `userID` bigint(20) unsigned NOT NULL,
+  `sourceID` bigint(20) unsigned NOT NULL,
+  `fingerprint` varchar(64) NOT NULL,
+  `modifyTime` int(11) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_source` (`userID`,`sourceID`),
+  KEY `user_fingerprint` (`userID`,`fingerprint`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

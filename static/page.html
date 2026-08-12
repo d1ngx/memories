@@ -4,46 +4,56 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
 	<title>Memories</title>
-	<link rel="stylesheet" href="./plugins/memories/static/style.css?v=1.7.0">
+	<link rel="stylesheet" href="./static/style/lib/font-icon/style.css?v=1.8.2">
+	<link rel="stylesheet" href="./plugins/memories/static/vendor/leaflet/leaflet.css?v=1.9.4">
+	<link rel="stylesheet" href="./plugins/memories/static/style.css?v=1.8.2">
 </head>
 <body>
 	<div id="app" class="app-shell">
-		<aside class="library-nav">
-			<div class="brand"><span class="brand-icon">▣</span><strong>Memories</strong></div>
+		<aside class="library-nav" id="library-nav">
+			<div class="brand"><span class="brand-icon" aria-hidden="true"><i class="ri-gallery-fill"></i></span><span class="brand-copy"><strong>Memories</strong><small>照片图库</small></span></div>
 			<nav class="nav-section primary-nav">
-				<button class="nav-item active" data-view="timeline" data-title="时间线" data-subtitle="按拍摄日期浏览照片和视频"><span>▧</span>时间线</button>
-				<button class="nav-item" data-action="search"><span>⌕</span>搜索</button>
-				<button class="nav-item" data-action="folders"><span>▰</span>文件夹</button>
-				<button class="nav-item" data-view="favorites" data-title="收藏" data-subtitle="你收藏的照片和视频"><span>★</span>收藏</button>
-				<button class="nav-item" data-action="albums"><span>▣</span>相册</button>
-				<button class="nav-item" data-action="people"><span>▣</span>人物 <em id="people-count"></em></button>
-				<button class="nav-item" data-view="archive" data-title="归档" data-subtitle="已从时间线归档的项目"><span>▰</span>归档</button>
-				<button class="nav-item" data-view="thisday" data-title="当年今日" data-subtitle="往年今天拍摄的回忆"><span>▣</span>当年今日</button>
-				<button class="nav-item" data-view="places" data-title="地图" data-subtitle="包含地理位置的照片"><span>⌖</span>地图</button>
-				<button class="nav-item" data-action="tags"><span>◆</span>标签 <em id="tag-count"></em></button>
+				<p class="nav-label">图库</p>
+				<button class="nav-item active" data-view="timeline" data-title="时间线" data-subtitle="按拍摄日期浏览照片和视频"><span class="ri-time-line"></span><b>时间线</b></button>
+				<button class="nav-item" data-action="search"><span class="ri-search-line"></span><b>搜索</b><kbd>/</kbd></button>
+				<button class="nav-item" data-action="folders"><span class="ri-folder-line"></span><b>文件夹</b></button>
+				<button class="nav-item" data-view="favorites" data-title="收藏" data-subtitle="你收藏的照片和视频"><span class="ri-heart-line"></span><b>收藏</b></button>
+				<p class="nav-label">智能分类</p>
+				<button class="nav-item" data-action="albums"><span class="ri-album-line"></span><b>相册</b></button>
+				<button class="nav-item" data-action="people"><span class="ri-group-line"></span><b>人物</b><em id="people-count"></em></button>
+				<button class="nav-item" data-view="thisday" data-title="当年今日" data-subtitle="往年今天拍摄的回忆"><span class="ri-history-line"></span><b>当年今日</b></button>
+				<button class="nav-item" data-view="places" data-title="地图" data-subtitle="包含地理位置的照片"><span class="ri-map-pin-line"></span><b>地图</b></button>
+				<button class="nav-item" data-action="tags"><span class="ri-price-tag-line"></span><b>标签</b><em id="tag-count"></em></button>
+				<p class="nav-label">管理</p>
+				<button class="nav-item" data-view="archive" data-title="归档" data-subtitle="已从时间线归档的项目"><span class="ri-archive-line"></span><b>归档</b></button>
 			</nav>
-			<button class="nav-item settings" data-action="settings"><span>⚙</span>设置</button>
+			<div class="storage-note"><span></span><div><b>个人空间</b><small>媒体由 KodBox 安全存储</small></div></div>
+			<button class="nav-item settings" data-action="settings"><span class="ri-settings-line"></span><b>设置</b></button>
 		</aside>
 
 		<section class="content-shell">
 			<header class="content-header">
-				<div class="heading"><h1 id="page-title">时间线</h1><p id="subtitle">按拍摄日期浏览照片和视频</p></div>
+				<button id="nav-toggle" type="button" aria-label="打开导航" aria-expanded="false"><i class="ri-menu-line"></i></button>
+				<div class="heading"><div class="eyebrow">我的照片</div><h1 id="page-title">时间线</h1><p id="subtitle">按拍摄日期浏览照片和视频</p></div>
 				<div class="actions">
-					<div class="search-box"><span>⌕</span><input id="search-input" type="search" placeholder="查找你的图片…" autocomplete="off"></div>
+					<div class="search-box"><span class="ri-search-line"></span><input id="search-input" type="search" placeholder="搜索照片、人物或标签" autocomplete="off"><kbd>/</kbd></div>
 					<select id="media-filter" aria-label="媒体类型"><option value="timeline">所有媒体</option><option value="photos">照片</option><option value="videos">视频</option></select>
-					<button id="scan">更新索引</button>
+					<button id="rebuild-shortcut" type="button" title="重新读取照片拍摄时间与地理位置"><i class="ri-map-pin-line"></i><span>重建位置</span></button>
+					<button id="scan"><i class="ri-refresh-line"></i><span>更新索引</span></button>
 				</div>
 			</header>
-			<main id="timeline"><div class="empty">正在加载…</div></main>
+			<div class="view-toolbar"><span class="view-hint">按时间分组</span><span class="view-legend"><i></i> 双击照片即可打开</span></div>
+			<main id="timeline"><div class="loading-state" aria-label="正在加载"><span></span><span></span><span></span><span></span><span></span><span></span></div></main>
 			<div id="sentinel"></div>
 		</section>
 	</div>
+	<div id="nav-scrim" class="nav-scrim hidden"></div>
 
-	<div id="viewer" class="viewer hidden"><button class="close">×</button><div class="stage"></div><div class="caption"></div></div>
+	<div id="viewer" class="viewer hidden"><div class="viewer-topbar"><span class="viewer-brand"><i class="ri-gallery-line"></i> Memories</span><button class="close" aria-label="关闭查看器"><i class="ri-close-line"></i></button></div><div class="stage"></div><div class="caption"></div></div>
 
 	<div id="settings" class="modal hidden">
 		<div class="settings-card">
-			<button class="modal-close" aria-label="关闭">×</button>
+			<button class="modal-close" aria-label="关闭"><i class="ri-close-line"></i></button>
 			<h2>Memories 设置</h2>
 			<div class="settings-layout">
 				<nav class="settings-nav">
@@ -69,8 +79,10 @@
 					</section>
 					<section class="settings-panel" data-panel="folders">
 						<h3>文件夹</h3><p>当前索引 KodBox 个人空间内所有支持的媒体文件。</p>
-						<div class="folder-row"><span>▰</span><div><b>个人空间</b><small>由 KodBox 权限系统保护</small></div></div>
+						<div class="folder-row"><span class="ri-folder-shield-line"></span><div><b>个人空间</b><small>由 KodBox 权限系统保护</small></div></div>
 						<button class="settings-scan primary">立即更新索引</button>
+						<button id="rebuild-metadata" type="button"><i class="ri-restart-line"></i> 重建拍摄时间与位置</button>
+						<p id="metadata-status" class="metadata-status">适用于启用 EXIF 后补录旧照片，或重新解析 XMP 与视频定位数据。</p>
 					</section>
 					<section class="settings-panel" data-panel="albums"><h3>相册</h3><p>可以创建、重命名和删除相册，并从媒体卡片将照片或视频加入相册。</p></section>
 					<section class="settings-panel" data-panel="thisday"><h3>On This Day</h3><p>“当年今日”会显示往年同月同日拍摄的媒体。</p></section>
@@ -81,8 +93,8 @@
 
 	<div id="app-dialog" class="app-dialog hidden" role="dialog" aria-modal="true" aria-labelledby="app-dialog-title">
 		<div class="app-dialog-card">
-			<button class="app-dialog-close" type="button" aria-label="关闭">×</button>
-			<div class="app-dialog-icon" aria-hidden="true">✦</div>
+			<button class="app-dialog-close" type="button" aria-label="关闭"><i class="ri-close-line"></i></button>
+			<div class="app-dialog-icon ri-information-line" aria-hidden="true"></div>
 			<h2 id="app-dialog-title"></h2>
 			<p id="app-dialog-message"></p>
 			<label class="app-dialog-field"><span>人物名称</span><input id="app-dialog-input" type="text" maxlength="60" autocomplete="off"></label>
@@ -90,6 +102,7 @@
 			<div class="app-dialog-actions"><button type="button" data-dialog-cancel>取消</button><button type="button" class="primary" data-dialog-confirm>确定</button></div>
 		</div>
 	</div>
-	<script src="./plugins/memories/static/page.js?v=1.7.0"></script>
+	<script src="./plugins/memories/static/vendor/leaflet/leaflet.js?v=1.9.4"></script>
+	<script src="./plugins/memories/static/page.js?v=1.8.2"></script>
 </body>
 </html>

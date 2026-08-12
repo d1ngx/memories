@@ -4,6 +4,7 @@
 
 - 已安装并可正常登录的 KodBox。
 - 必需：KodBox `fileThumb` 插件，用于时间线缩略图和大图预览资源。
+- 强烈建议：PHP EXIF 扩展，用于读取 JPEG/TIFF 的拍摄时间和 GPS；修改 PHP 配置后需重启 Web 服务。
 - 建议：KodBox PhotoSwipe 图片预览组件和 DPlayer 视频播放器。
 - 可选：本项目 `recognize` 插件，用于对象、地标、人脸和人物聚类。
 - 数据库支持 MySQL/MariaDB 与 SQLite，数据表由插件自动创建。
@@ -38,6 +39,7 @@
 - 视频关闭后仍播放：清浏览器缓存，确认已部署最新版 `static/page.js`。
 - 列表偶发重复：清缓存并重新更新索引；索引以用户和 `sourceID` 去重。
 - 标签或人物为空：检查 Recognize 状态、队列和 `data/temp/log/recognize/` 日志。
+- 地图为空：在 Memories 设置的“文件夹”中执行“重建拍摄时间与位置”；若提示 EXIF 不可用，请启用 PHP `exif` 扩展并重启 Web 服务。微信等应用压缩后的图片可能已删除 GPS。
 
 ## Docker 部署
 

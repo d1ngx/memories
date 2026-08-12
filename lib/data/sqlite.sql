@@ -42,3 +42,13 @@ CREATE TABLE IF NOT EXISTS "plugin_memories_album_item" (
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_memories_album_source" ON "plugin_memories_album_item" ("albumID","sourceID");
 CREATE INDEX IF NOT EXISTS "idx_memories_album_item_user" ON "plugin_memories_album_item" ("userID","albumID");
 CREATE INDEX IF NOT EXISTS "idx_memories_album_item_source" ON "plugin_memories_album_item" ("sourceID");
+
+CREATE TABLE IF NOT EXISTS "plugin_memories_metadata_state" (
+  "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "userID" integer NOT NULL,
+  "sourceID" integer NOT NULL,
+  "fingerprint" varchar(64) NOT NULL,
+  "modifyTime" integer NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_memories_metadata_user_source" ON "plugin_memories_metadata_state" ("userID","sourceID");
+CREATE INDEX IF NOT EXISTS "idx_memories_metadata_user_fingerprint" ON "plugin_memories_metadata_state" ("userID","fingerprint");

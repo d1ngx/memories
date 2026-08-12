@@ -4,6 +4,7 @@ class memoriesPlugin extends PluginBase {
 	private $tableName = 'plugin_memories_media';
 	private $albumTable = 'plugin_memories_album';
 	private $albumItemTable = 'plugin_memories_album_item';
+	private $metadataStateTable = 'plugin_memories_metadata_state';
 	private $imageExt = array('jpg','jpeg','png','gif','webp','avif','heic','heif','bmp');
 	private $videoExt = array('mp4','mov','m4v','webm','mkv','avi');
 	private $recognizeTrace = array();
@@ -44,7 +45,7 @@ class memoriesPlugin extends PluginBase {
 
 	public function initTable() {
 		$tables = Model()->db()->getTables();
-		$required = array($this->tableName, $this->albumTable, $this->albumItemTable);
+		$required = array($this->tableName, $this->albumTable, $this->albumItemTable, $this->metadataStateTable);
 		if (!array_diff($required, $tables)) return true;
 		$file = stristr($GLOBALS['config']['database']['DB_TYPE'], 'sqlite') ? 'sqlite.sql' : 'mysql.sql';
 		foreach (sqlSplit(file_get_contents($this->pluginPath.'lib/data/'.$file)) as $sql) {
@@ -94,6 +95,13 @@ class memoriesPlugin extends PluginBase {
 		return show_json($result);
 	}
 
+	public function rebuildMetadata() {
+		$this->checkRequest('POST'); $this->initTable(); $userID = KodUser::id();
+		Model($this->metadataStateTable)->where(array('userID' => $userID))->delete();
+		$total = Model($this->tableName)->where(array('userID' => $userID))->count();
+		show_json(array('total' => intval($total), 'capabilities' => $this->indexer()->capabilities()));
+	}
+
 	private function scanSources($userID, $limit) {
 		$this->initTable();
 		$this->recognizeTrace = array('attempted' => 0, 'queued' => 0, 'hookCalls' => 0, 'directCalls' => 0, 'noReceiver' => 0, 'errors' => array());
@@ -106,15 +114,17 @@ class memoriesPlugin extends PluginBase {
 		if ($userID !== null) $where['targetID'] = intval($userID);
 		$sources = Model('Source')->where($where)->order('modifyTime desc')->select();
 		if ($sources === false || !is_array($sources)) throw new Exception('Unable to read KodBox media sources');
-		$processed = 0; $skipped = 0; $recognizeQueued = 0;
+		$processed = 0; $skipped = 0; $recognizeQueued = 0; $fingerprint = $this->indexer()->fingerprint();
 		foreach ($sources as $source) {
 			$existing = Model($this->tableName)->where(array('userID' => $source['targetID'], 'sourceID' => $source['sourceID']))->find();
-			if ($existing && intval($existing['sourceModifyTime']) === intval($source['modifyTime'])) {
+			$state = $existing ? Model($this->metadataStateTable)->where(array('userID' => $source['targetID'], 'sourceID' => $source['sourceID'], 'fingerprint' => $fingerprint))->find() : false;
+			if ($existing && $state && intval($existing['sourceModifyTime']) === intval($source['modifyTime'])) {
 				$skipped++;
 				if ($this->recognizeDispatch('memories.media.discovered', $existing)) $recognizeQueued++;
 				continue;
 			}
 			if ($this->indexSource($source, $existing)) $recognizeQueued++;
+			$this->saveMetadataState($source, $fingerprint);
 			$processed++;
 			if ($processed >= $limit) break;
 		}
@@ -130,9 +140,14 @@ class memoriesPlugin extends PluginBase {
 			'recognizeQueued' => $recognizeQueued,
 			'recognizeTrace' => $this->recognizeTrace,
 			'removed' => $removed,
-			'total' => count($sources),
+			'total' => count($sources), 'metadataFingerprint' => $fingerprint, 'capabilities' => $this->indexer()->capabilities(),
 			'remainingHint' => max(0, count($sources) - $skipped - $processed),
 		);
+	}
+
+	private function saveMetadataState($source, $fingerprint) {
+		$where = array('userID' => intval($source['targetID']), 'sourceID' => intval($source['sourceID'])); $model = Model($this->metadataStateTable); $model->setDataAuto(false); $row = $model->where($where)->find();
+		$data = array('fingerprint' => $fingerprint, 'modifyTime' => time()); if ($row) $model->where(array('id' => intval($row['id'])))->save($data); else $model->add($where + $data);
 	}
 
 	private function cleanupMissing($userID, $sources) {
@@ -149,6 +164,7 @@ class memoriesPlugin extends PluginBase {
 			if (isset($active[$key])) continue;
 			Model($this->tableName)->where(array('id' => intval($item['id'])))->delete();
 			if (in_array($this->albumItemTable, Model()->db()->getTables())) Model($this->albumItemTable)->where(array('userID' => intval($item['userID']), 'sourceID' => intval($item['sourceID'])))->delete();
+			if (in_array($this->metadataStateTable, Model()->db()->getTables())) Model($this->metadataStateTable)->where(array('userID' => intval($item['userID']), 'sourceID' => intval($item['sourceID'])))->delete();
 			$removed++;
 			try { Hook::trigger('memories.media.removed', $item); } catch (Throwable $e) {
 				$this->log('memories remove hook error='.$e->getMessage());
@@ -211,6 +227,7 @@ class memoriesPlugin extends PluginBase {
 		if ($view === 'favorites') $where['favorite'] = 1;
 		if ($view === 'photos') $where['ext'] = array('in', $this->imageExt);
 		if ($view === 'videos') $where['ext'] = array('in', $this->videoExt);
+		if ($view === 'places') { $where['latitude'] = array('gt', -91); $where['longitude'] = array('gt', -181); }
 		$query = trim(_get($this->in, 'q', ''));
 		if ($query !== '') {
 			$searchIDs = $this->searchSourceIDs($query);
@@ -256,9 +273,6 @@ class memoriesPlugin extends PluginBase {
 		if ($view === 'thisday') {
 			$monthDay = date('m-d');
 			$result['list'] = array_values(array_filter((array)$result['list'], function($item) use ($monthDay) { return date('m-d', $item['takenAt']) === $monthDay; }));
-		}
-		if ($view === 'places') {
-			$result['list'] = array_values(array_filter((array)$result['list'], function($item) { return $item['latitude'] !== null && $item['latitude'] !== ''; }));
 		}
 		if (!isset($result['list']) || !is_array($result['list'])) $result['list'] = array();
 		$sourceIDs = array(); foreach ($result['list'] as $item) $sourceIDs[] = intval($item['sourceID']);

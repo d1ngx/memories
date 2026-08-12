@@ -2,7 +2,7 @@
 	"id":"memories",
 	"name":"{{LNG['memories.meta.name']}}",
 	"title":"{{LNG['memories.meta.title']}}",
-	"version":"1.8.0",
+	"version":"1.8.2",
 	"category":"media,file",
 	"source":{"className":"font-icon ri-gallery-fill bg-blue-6"},
 	"description":"{{LNG['memories.meta.desc']}}",
