@@ -1,0 +1,12 @@
+{
+  "name": "Memories for KodBox",
+  "repositoryDependencies": ["github.com/d1ngx/recognize"],
+  "install": "bash .cursor/install.sh",
+  "terminals": [
+    {
+      "name": "kodbox",
+      "command": "cd \"$HOME/kodbox\" && php -d display_errors=1 -d error_reporting=E_ALL -S 0.0.0.0:8080 router.php"
+    }
+  ],
+  "ports": [8080]
+}
